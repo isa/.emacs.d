@@ -1,0 +1,220 @@
+#+TITLE: Emacs Configuration
+#+AUTHOR: Isa Goksu
+
+This file contains my Emacs configuration. I try to cluster all the settings with their respectful categories. Then again it is my categories ;)
+
+* Things to work on
+
+** DONE Cursor color
+** DONE Proper UTF8 setup
+** DONE Empty scratch buffer
+** DONE Change default window gui size
+** TODO Better mod-line
+** TODO Distraction-free writing experience
+** TODO Autocompletion with Company
+** DONE NeoTree setup
+** TODO Projectile setup
+** TODO Visual RegExp setup
+** TODO Python setup
+** TODO Magit setup
+** TODO Graphviz setup
+** TODO Rest Client Setup
+** TODO iEdit setup for multiple cursor editing
+
+* Sensible Defaults
+
+This section contains all the settings about file-encoding, tab/spaces, OS related things and some stupid emacs configurations need to be done.
+
+#+BEGIN_SRC emacs-lisp
+  ;; just remove that annoying welcome page
+  (setq inhibit-startup-message t)
+
+  ;; let's make sure everything is in UTF-8
+  (set-language-environment 'utf-8)
+  (setq locale-coding-system 'utf-8)
+  (prefer-coding-system 'utf-8)
+  (setq default-file-name-coding-system 'utf-8)
+  (set-default-coding-systems 'utf-8)
+  (set-terminal-coding-system 'utf-8)
+  (set-keyboard-coding-system 'utf-8)
+
+  ;; I hate tabs most of the time
+  (setq-default indent-tabs-mode nil)
+  (setq-default indent-tabs-mode nil
+                tab-stop-list    ()
+                tab-width        2)
+  (setq-default python-indent-guess-indent-offset nil)
+
+  ;; please shorten 'yes' or 'no' prompts
+  (fset 'yes-or-no-p 'y-or-n-p)
+  (setq confirm-nonexistent-file-or-buffer nil)
+
+  ;; please when I press 'C-x k', just kill the current one without asking
+  (global-set-key (kbd "C-x k") 'kill-this-buffer)
+
+  ;; some modes needed to be enabled by default IMO
+  (column-number-mode)
+  (global-linum-mode)
+  (global-auto-revert-mode t)
+  (setq backup-inhibited t)
+
+  ;; some white-space magic
+  (whitespace-mode)
+  (add-hook 'before-save-hook 'whitespace-cleanup)
+
+  ;; no scratch messages
+  (setq initial-scratch-message nil)
+  (defun display-startup-echo-area-message ()
+    (message "Let the hacking begin!"))
+#+END_SRC
+
+* Custom Functions
+#+BEGIN_SRC emacs-lisp
+ ;; enable font ligatures
+
+ (when (window-system)
+   (set-default-font "Fira Code 16"))
+     (let ((alist '(
+        (33 . ".\\(?:\\(?:==\\|!!\\)\\|[!=]\\)")
+        (35 . ".\\(?:###\\|##\\|_(\\|[#(?[_{]\\)")
+        (36 . ".\\(?:>\\)")
+        (37 . ".\\(?:\\(?:%%\\)\\|%\\)")
+        (38 . ".\\(?:\\(?:&&\\)\\|&\\)")
+        (42 . ".\\(?:\\(?:\\*\\*/\\)\\|\\(?:\\*[*/]\\)\\|[*/>]\\)")
+        (43 . ".\\(?:\\(?:\\+\\+\\)\\|[+>]\\)")
+        (45 . ".\\(?:\\(?:-[>-]\\|<<\\|>>\\)\\|[<>}~-]\\)")
+        (46 . ".\\(?:\\(?:\\.[.<]\\)\\|[.=-]\\)")
+        (47 . ".\\(?:\\(?:\\*\\*\\|//\\|==\\)\\|[*/=>]\\)")
+        (48 . ".\\(?:x[a-zA-Z]\\)")
+        (58 . ".\\(?:::\\|[:=]\\)")
+        (59 . ".\\(?:;;\\|;\\)")
+        (60 . ".\\(?:\\(?:!--\\)\\|\\(?:~~\\|->\\|\\$>\\|\\*>\\|\\+>\\|--\\|<[<=-]\\|=[<=>]\\||>\\)\\|[*$+~/<=>|-]\\)")
+        (61 . ".\\(?:\\(?:/=\\|:=\\|<<\\|=[=>]\\|>>\\)\\|[<=>~]\\)")
+        (62 . ".\\(?:\\(?:=>\\|>[=>-]\\)\\|[=>-]\\)")
+        (63 . ".\\(?:\\(\\?\\?\\)\\|[:=?]\\)")
+        (91 . ".\\(?:]\\)")
+        (92 . ".\\(?:\\(?:\\\\\\\\\\)\\|\\\\\\)")
+        (94 . ".\\(?:=\\)")
+        (119 . ".\\(?:ww\\)")
+        (123 . ".\\(?:-\\)")
+        (124 . ".\\(?:\\(?:|[=|]\\)\\|[=>|]\\)")
+        (126 . ".\\(?:~>\\|~~\\|[>=@~-]\\)"))))
+
+        (dolist (char-regexp alist)
+            (set-char-table-range composition-function-table (car char-regexp)
+                                `([,(cdr char-regexp) 0 font-shape-gstring]))))
+
+  (defun make-pretty-gui()
+    "Customize themes, cursors for my own goodness"
+    (load-theme 'base16-mexico-light t)
+    (set-cursor-color "#edd644")
+    (blink-cursor-mode 0))
+#+END_SRC
+* Package Related Everything
+#+BEGIN_SRC emacs-lisp
+  ;; use-package for everything else
+  (unless (package-installed-p 'use-package)
+    (package-refresh-contents)
+    (package-install 'use-package))
+
+  ;; get better emacs defaults
+  (use-package better-defaults :ensure t)
+
+  ;; tell me which options are available
+  ;; everytime I press a key combo
+  (use-package which-key :ensure t)
+
+  ;; I don't think I can survive w/o vim bindings
+  (use-package evil :ensure t
+    :config (evil-mode))
+
+  ;; Let's install counsel and its friends
+  (use-package counsel :ensure t)
+
+  (use-package ivy :ensure t
+    :diminish (ivy-mode)
+    :bind (("C-x b" . ivy-switch-buffer))
+    :config
+    (ivy-mode 1)
+    (setq ivy-use-virtual-buffers t)
+    (setq ivy-display-style 'fancy))
+
+  (use-package swiper :ensure try
+    :bind (("C-s" . swiper)
+         ("C-r" . swiper)
+         ("M-x" . counsel-M-x)
+         ("C-x C-f" . counsel-find-file))
+    :config
+    (progn
+      (ivy-mode 1)
+      (setq ivy-use-virtual-buffers t)
+      (setq ivy-display-style 'fancy)))
+
+  ;; bring some file-browsing support, and make sure
+  ;; you run 'all-the-icons-install-fonts' once before using
+  (use-package all-the-icons :ensure t)
+  (use-package neotree :ensure t
+    :config (setq neo-theme (if (display-graphic-p) 'icons 'arrow)))
+
+  ;; let's start some python magic
+  (use-package pyenv-mode :ensure t
+    :config (pyenv-mode))
+#+END_SRC
+
+* UI Customizations
+#+BEGIN_SRC emacs-lisp
+  ;; load custom themes
+  (add-to-list 'load-path "~/.emacs.d/themes/")
+  (add-to-list 'custom-theme-load-path "~/.emacs.d/themes/")
+  (setq custom-safe-themes t)
+
+  ;; good looking themes
+  (use-package base16-theme :ensure t)
+  (use-package danneskjold-theme :ensure t)
+
+  ;; different themes for different UIs
+  (if (display-graphic-p)
+    (add-hook 'after-init-hook 'make-pretty-gui)
+    (add-hook 'after-init-hook
+      (lambda () (load-theme 'danneskjold t))))
+
+
+  ;; please no toolbar and menubar
+  (menu-bar-mode 0)
+  (when (window-system)
+    (tool-bar-mode 0)
+    (scroll-bar-mode 0)
+
+    (custom-set-faces
+      '(default ((t (:background nil :foreground nil))))
+      '(fringe ((t (:background nil)))))
+
+    (setq linum-format "%3d ")
+
+    ;; a proper window size on launch
+    (set-frame-position (selected-frame) 1050 70)
+    (set-frame-size (selected-frame) 81 47))
+#+END_SRC
+* Org-mode Configurations
+#+BEGIN_SRC emacs-lisp
+  ;; let's make sure latest and greatest is here
+;;  (use-package org :init
+    ;; Install Org from ELPA if not already
+;;    (unless (package-installed-p 'org (version-to-list "9.1.6"))
+;;      (package-refresh-contents)
+;;      (package-install (cadr (assq 'org package-archive-contents)))))
+
+;;  (use-package org :ensure org-plus-contrib :pin org)
+
+  ;; fancy looking bullets for org-mode
+;;  (use-package org-bullets :ensure t
+;;    :config (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+#+END_SRC
+* Personal Information
+
+My personal information
+
+#+BEGIN_SRC emacs-lisp
+  (setq user-full-name "Isa Goksu")
+  (setq user-mail-address "isa.goksu@gmail.com")
+#+END_SRC

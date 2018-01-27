@@ -1,3 +1,8 @@
 elpa
 network-security.data
-
+settings.el
+backups
+bookmarks
+auto-save-list
+recentf
+.mc-lists.el
