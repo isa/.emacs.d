@@ -9,17 +9,28 @@ This file contains my Emacs configuration. I try to cluster all the settings wit
 ** DONE Proper UTF8 setup
 ** DONE Empty scratch buffer
 ** DONE Change default window gui size
-** TODO Better mod-line
-** TODO Distraction-free writing experience
-** TODO Autocompletion with Company
+** DONE Distraction-free writing experience
+** DONE Snippet Support
 ** DONE NeoTree setup
-** TODO Projectile setup
-** TODO Visual RegExp setup
-** TODO Python setup
+** DONE Projectile setup
 ** TODO Magit setup
+** TODO Visual RegExp setup
+** TODO Autocompletion setup
+** TODO Python setup
 ** TODO Graphviz setup
 ** TODO Rest Client Setup
 ** TODO iEdit setup for multiple cursor editing
+** TODO Better mod-line
+
+* Custom Functions
+#+BEGIN_SRC emacs-lisp
+  ;; make a better selection of the gui theme
+  (defun make-pretty-gui()
+    "Customize themes, cursors for my own goodness"
+    (load-theme 'base16-mexico-light t)
+    (set-cursor-color "#EA2027")
+    (blink-cursor-mode 0))
+#+END_SRC
 
 * Sensible Defaults
 
@@ -28,6 +39,9 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
 #+BEGIN_SRC emacs-lisp
   ;; just remove that annoying welcome page
   (setq inhibit-startup-message t)
+
+  ;; OSX related settings
+  (defconst *is-a-mac* (eq system-type 'darwin))
 
   ;; let's make sure everything is in UTF-8
   (set-language-environment 'utf-8)
@@ -54,9 +68,11 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
 
   ;; some modes needed to be enabled by default IMO
   (column-number-mode)
-  (global-linum-mode)
+  ;; (global-linum-mode)
   (global-auto-revert-mode t)
+  (setq auto-revert-verbose nil)
   (setq backup-inhibited t)
+  (global-visual-line-mode)
 
   ;; some white-space magic
   (whitespace-mode)
@@ -66,49 +82,14 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
   (setq initial-scratch-message nil)
   (defun display-startup-echo-area-message ()
     (message "Let the hacking begin!"))
-#+END_SRC
 
-* Custom Functions
-#+BEGIN_SRC emacs-lisp
- ;; enable font ligatures
-
- (when (window-system)
-   (set-default-font "Fira Code 16"))
-     (let ((alist '(
-        (33 . ".\\(?:\\(?:==\\|!!\\)\\|[!=]\\)")
-        (35 . ".\\(?:###\\|##\\|_(\\|[#(?[_{]\\)")
-        (36 . ".\\(?:>\\)")
-        (37 . ".\\(?:\\(?:%%\\)\\|%\\)")
-        (38 . ".\\(?:\\(?:&&\\)\\|&\\)")
-        (42 . ".\\(?:\\(?:\\*\\*/\\)\\|\\(?:\\*[*/]\\)\\|[*/>]\\)")
-        (43 . ".\\(?:\\(?:\\+\\+\\)\\|[+>]\\)")
-        (45 . ".\\(?:\\(?:-[>-]\\|<<\\|>>\\)\\|[<>}~-]\\)")
-        (46 . ".\\(?:\\(?:\\.[.<]\\)\\|[.=-]\\)")
-        (47 . ".\\(?:\\(?:\\*\\*\\|//\\|==\\)\\|[*/=>]\\)")
-        (48 . ".\\(?:x[a-zA-Z]\\)")
-        (58 . ".\\(?:::\\|[:=]\\)")
-        (59 . ".\\(?:;;\\|;\\)")
-        (60 . ".\\(?:\\(?:!--\\)\\|\\(?:~~\\|->\\|\\$>\\|\\*>\\|\\+>\\|--\\|<[<=-]\\|=[<=>]\\||>\\)\\|[*$+~/<=>|-]\\)")
-        (61 . ".\\(?:\\(?:/=\\|:=\\|<<\\|=[=>]\\|>>\\)\\|[<=>~]\\)")
-        (62 . ".\\(?:\\(?:=>\\|>[=>-]\\)\\|[=>-]\\)")
-        (63 . ".\\(?:\\(\\?\\?\\)\\|[:=?]\\)")
-        (91 . ".\\(?:]\\)")
-        (92 . ".\\(?:\\(?:\\\\\\\\\\)\\|\\\\\\)")
-        (94 . ".\\(?:=\\)")
-        (119 . ".\\(?:ww\\)")
-        (123 . ".\\(?:-\\)")
-        (124 . ".\\(?:\\(?:|[=|]\\)\\|[=>|]\\)")
-        (126 . ".\\(?:~>\\|~~\\|[>=@~-]\\)"))))
-
-        (dolist (char-regexp alist)
-            (set-char-table-range composition-function-table (car char-regexp)
-                                `([,(cdr char-regexp) 0 font-shape-gstring]))))
-
-  (defun make-pretty-gui()
-    "Customize themes, cursors for my own goodness"
-    (load-theme 'base16-mexico-light t)
-    (set-cursor-color "#edd644")
-    (blink-cursor-mode 0))
+  ;; enable WindMove
+  (when (fboundp 'windmove-default-keybindings)
+    (windmove-default-keybindings))
+  (global-set-key (kbd "C-c h") 'windmove-left)
+  (global-set-key (kbd "C-c l") 'windmove-right)
+  (global-set-key (kbd "C-c k") 'windmove-up)
+  (global-set-key (kbd "C-c j") 'windmove-down)
 #+END_SRC
 * Package Related Everything
 #+BEGIN_SRC emacs-lisp
@@ -116,6 +97,11 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
   (unless (package-installed-p 'use-package)
     (package-refresh-contents)
     (package-install 'use-package))
+
+  ;; let's make sure OSX PATH is in exec list
+  (use-package  exec-path-from-shell :ensure t)
+  (if *is-a-mac*
+      (add-hook 'after-init-hook 'exec-path-from-shell-initialize))
 
   ;; get better emacs defaults
   (use-package better-defaults :ensure t)
@@ -129,7 +115,9 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
     :config (evil-mode))
 
   ;; Let's install counsel and its friends
-  (use-package counsel :ensure t)
+  (use-package counsel :ensure t
+    :bind (("M-y" . counsel-yank-pop)
+    :map ivy-minibuffer-map ("M-y" . ivy-next-line)))
 
   (use-package ivy :ensure t
     :diminish (ivy-mode)
@@ -159,6 +147,25 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
   ;; let's start some python magic
   (use-package pyenv-mode :ensure t
     :config (pyenv-mode))
+
+  ;; for days like no distraction needed
+  (use-package writeroom-mode :ensure t)
+
+  ;; snippets are awesome
+  (use-package yasnippet :ensure t
+    :config
+      (set-face-attribute 'yas-field-highlight-face nil :background "#fdcb6e")
+      (yas-global-mode))
+  (use-package yasnippet-snippets :ensure t)
+
+  ;; adding projectile support
+  (use-package projectile :ensure t)
+  (use-package counsel-projectile :ensure t
+    :config (counsel-projectile-mode t))
+
+  ;; MAGIT or not, that's the matter
+  (use-package magit :ensure t
+    :config (global-set-key (kbd "C-c m") 'magit-status))
 #+END_SRC
 
 * UI Customizations
@@ -178,37 +185,45 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
     (add-hook 'after-init-hook
       (lambda () (load-theme 'danneskjold t))))
 
-
   ;; please no toolbar and menubar
   (menu-bar-mode 0)
   (when (window-system)
     (tool-bar-mode 0)
     (scroll-bar-mode 0)
 
+    ;; customize font
+    (add-to-list 'default-frame-alist '(font . "Fira Code-16" ))
+    (set-face-attribute 'default t :font "Fira Code-16")
     (custom-set-faces
       '(default ((t (:background nil :foreground nil))))
       '(fringe ((t (:background nil)))))
+    (setq-default line-spacing 6)
 
+    ;; proper line numbers
     (setq linum-format "%3d ")
 
     ;; a proper window size on launch
     (set-frame-position (selected-frame) 1050 70)
     (set-frame-size (selected-frame) 81 47))
 #+END_SRC
+* Mode Line Customizations
+#+BEGIN_SRC emacs-lisp
+  ;; install a mode-line base
+#+END_SRC
 * Org-mode Configurations
 #+BEGIN_SRC emacs-lisp
   ;; let's make sure latest and greatest is here
-;;  (use-package org :init
+  (use-package org :init
     ;; Install Org from ELPA if not already
-;;    (unless (package-installed-p 'org (version-to-list "9.1.6"))
-;;      (package-refresh-contents)
-;;      (package-install (cadr (assq 'org package-archive-contents)))))
+    (unless (package-installed-p 'org (version-to-list "9.1.6"))
+      (package-refresh-contents)
+      (package-install (cadr (assq 'org package-archive-contents)))))
 
-;;  (use-package org :ensure org-plus-contrib :pin org)
+  (use-package org :ensure org-plus-contrib :pin org)
 
   ;; fancy looking bullets for org-mode
-;;  (use-package org-bullets :ensure t
-;;    :config (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+  (use-package org-bullets :ensure t
+    :config (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
 #+END_SRC
 * Personal Information
 

@@ -19,7 +19,7 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (neo-theme all-the-icons neotree org-bullets org-plus-contrib org danneskjold-theme base16-theme pyenv-mode try ivy evil which-key better-defaults use-package))))
+    (magit exec-path-from-shell counsel-projectile projectile yasnippet-snippets yasnippet company company-mode writeroom-mode telephone-line neo-theme all-the-icons neotree org-bullets org-plus-contrib org danneskjold-theme base16-theme pyenv-mode try ivy evil which-key better-defaults use-package))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
