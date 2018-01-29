@@ -19,7 +19,7 @@ This file contains my Emacs configuration. I try to cluster all the settings wit
 ** DONE Graphviz setup
 ** DONE Evil multi edit
 ** DONE Autocompletion setup
-** TODO Python setup
+** DONE Python setup
 ** TODO Better mod-line
 
 * Custom Functions
@@ -42,6 +42,19 @@ This file contains my Emacs configuration. I try to cluster all the settings wit
       (evil-shift-right (region-beginning) (region-end))
       (evil-normal-state)
       (evil-visual-restore))
+
+    (defun isa/projectile-pyenv-mode-set ()
+      "Set pyenv version matching project name."
+      (let ((project (projectile-project-name)))
+        (if (member project (pyenv-mode-versions))
+            (pyenv-mode-set project)
+          (pyenv-mode-unset))))
+    (defun isa/projectile-pyenv-mode-set ()
+      "Set pyenv version matching project name."
+      (let ((project (projectile-project-name)))
+        (if (member project (pyenv-mode-versions))
+            (pyenv-mode-set project)
+          (pyenv-mode-unset))))
 #+END_SRC
 
 * Sensible Defaults
@@ -63,9 +76,11 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
   (set-default-coding-systems 'utf-8)
   (set-terminal-coding-system 'utf-8)
   (set-keyboard-coding-system 'utf-8)
+  (setq buffer-file-coding-system 'utf-8-unix)
 
   ;; I hate tabs most of the time
   (setq tab-width 2)
+  (setq default-tab-width 2)
   (setq-default indent-tabs-mode nil
                 tab-stop-list    ()
                 tab-width        2)
@@ -83,17 +98,30 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
   ;; please when I press 'C-x k', just kill the current one without asking
   (global-set-key (kbd "C-x k") 'kill-this-buffer)
 
-  ;; some modes needed to be enabled by default IMO
+  ;; show me the column numbers as well
   (column-number-mode)
-  ;; (global-linum-mode)
+
+  ;; when there is a file change outside, revert the buffers
   (global-auto-revert-mode t)
   (setq auto-revert-verbose nil)
+
+  ;; no backups
   (setq backup-inhibited t)
+
+  ;; proper wrapping please
   (global-visual-line-mode)
 
   ;; some white-space magic
   (whitespace-mode)
   (add-hook 'before-save-hook 'whitespace-cleanup)
+  (setq require-final-newline t)
+
+  ;; proper scrolling
+  (setq mouse-wheel-scroll-amount '(0.01))
+  (setq scroll-conservatively 1)
+
+  ;; Frame title
+  (setq frame-title-format '("Emacs: %b"))
 
   ;; no scratch messages
   (setq initial-scratch-message nil)
@@ -107,6 +135,15 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
   (global-set-key (kbd "C-c l") 'windmove-right)
   (global-set-key (kbd "C-c k") 'windmove-up)
   (global-set-key (kbd "C-c j") 'windmove-down)
+
+  ;; Autoscroll shell input/output
+  (setq comint-scroll-to-bottom-on-input t
+        comint-scroll-to-bottom-on-output t
+        comint-scroll-show-maximum-output t
+        comint-scroll-to-bottom-on-output t)
+
+  ;; Handle large shell output more quickly
+  (add-hook 'comint-output-filter-functions 'comint-truncate-buffer)
 #+END_SRC
 * Package Related Everything
 #+BEGIN_SRC emacs-lisp
@@ -139,9 +176,17 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
       (define-key evil-visual-state-map [S-tab] 'isa/evil-shift-left-visual)
       (evil-mode))
 
+  (add-hook 'after-change-major-mode-hook
+      (function (lambda ()
+                  (setq evil-shift-width 2))))
+
   ;; multi-edit support for evil
   (use-package evil-multiedit :ensure t
     :config (evil-multiedit-default-keybinds))
+
+  ;; evil commenter M-; for selections
+  (use-package evil-nerd-commenter
+    :bind ("M-;" . evilnc-comment-or-uncomment-lines))
 
   ;; Let's install counsel and its friends
   (use-package counsel :ensure t
@@ -175,7 +220,18 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
 
   ;; let's start some python magic
   (use-package pyenv-mode :ensure t
-    :config (pyenv-mode))
+    :config
+      (pyenv-mode-set "python-ide")
+      (add-hook 'projectile-switch-project-hook 'isa/projectile-pyenv-mode-set)
+      (add-hook 'python-mode-hook 'pyenv-mode))
+
+  (use-package pyenv-mode-auto :ensure t)
+
+  (use-package jedi :ensure t
+    :config (jedi:ac-setup))
+
+  (use-package flycheck-pyflakes :ensure t
+    :config (add-hook 'python-mode-hook 'flycheck-mode))
 
   ;; for days like no distraction needed
   (use-package writeroom-mode :ensure t)
@@ -212,6 +268,21 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
       (setq ac-auto-start nil) ;; do not start auto-complete unless I press
       (global-set-key "\M-/" 'auto-complete)
       (setq-default ac-sources '(ac-source-words-in-all-buffer)))
+
+  ;; some additional major modes
+  (use-package dockerfile-mode :ensure t)
+  (use-package fish-mode :ensure t)
+  (use-package fsharp-mode :ensure t)
+  (use-package elixir-mode :ensure t)
+  (use-package lua-mode :ensure t)
+  (use-package js2-mode
+    :mode "\\.js$"
+    :config (add-to-list 'interpreter-mode-alist '("node" . js2-mode)))
+  (use-package nlinum :ensure t
+    :config (unless window-system
+              (setq nlinum-format "%3d ")))
+  (use-package kotlin-mode :ensure t)
+  (use-package yaml-mode :ensure t)
 #+END_SRC
 
 * UI Customizations
