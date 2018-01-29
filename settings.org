@@ -13,23 +13,35 @@ This file contains my Emacs configuration. I try to cluster all the settings wit
 ** DONE Snippet Support
 ** DONE NeoTree setup
 ** DONE Projectile setup
-** TODO Magit setup
-** TODO Visual RegExp setup
-** TODO Autocompletion setup
+** DONE Magit setup
+** DONE Visual RegExp setup
+** DONE Rest Client Setup
+** DONE Graphviz setup
+** DONE Evil multi edit
+** DONE Autocompletion setup
 ** TODO Python setup
-** TODO Graphviz setup
-** TODO Rest Client Setup
-** TODO iEdit setup for multiple cursor editing
 ** TODO Better mod-line
 
 * Custom Functions
 #+BEGIN_SRC emacs-lisp
-  ;; make a better selection of the gui theme
-  (defun make-pretty-gui()
-    "Customize themes, cursors for my own goodness"
-    (load-theme 'base16-mexico-light t)
-    (set-cursor-color "#EA2027")
-    (blink-cursor-mode 0))
+    ;; make a better selection of the gui theme
+    (defun isa/make-pretty-gui()
+      "Customize themes, cursors for my own goodness"
+      (load-theme 'base16-mexico-light t)
+      (set-cursor-color "#EA2027")
+      (blink-cursor-mode 0))
+
+    (defun isa/evil-shift-left-visual ()
+      (interactive)
+      (evil-shift-left (region-beginning) (region-end))
+      (evil-normal-state)
+      (evil-visual-restore))
+
+    (defun isa/evil-shift-right-visual ()
+      (interactive)
+      (evil-shift-right (region-beginning) (region-end))
+      (evil-normal-state)
+      (evil-visual-restore))
 #+END_SRC
 
 * Sensible Defaults
@@ -53,11 +65,16 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
   (set-keyboard-coding-system 'utf-8)
 
   ;; I hate tabs most of the time
-  (setq-default indent-tabs-mode nil)
+  (setq tab-width 2)
   (setq-default indent-tabs-mode nil
                 tab-stop-list    ()
                 tab-width        2)
+
+  ;; no python indentation guessing game
   (setq-default python-indent-guess-indent-offset nil)
+  (custom-set-variables
+    '(python-guess-indent nil)
+    '(python-indent-offset 2))
 
   ;; please shorten 'yes' or 'no' prompts
   (fset 'yes-or-no-p 'y-or-n-p)
@@ -99,20 +116,32 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
     (package-install 'use-package))
 
   ;; let's make sure OSX PATH is in exec list
-  (use-package  exec-path-from-shell :ensure t)
-  (if *is-a-mac*
-      (add-hook 'after-init-hook 'exec-path-from-shell-initialize))
+  (use-package  exec-path-from-shell :ensure t
+    :config
+      (if *is-a-mac*
+        (add-hook 'after-init-hook 'exec-path-from-shell-initialize)))
 
   ;; get better emacs defaults
   (use-package better-defaults :ensure t)
 
   ;; tell me which options are available
   ;; everytime I press a key combo
-  (use-package which-key :ensure t)
+  (use-package which-key :ensure t
+    :config (which-key-mode t))
 
   ;; I don't think I can survive w/o vim bindings
   (use-package evil :ensure t
-    :config (evil-mode))
+    :config
+      (define-key evil-insert-state-map (kbd "TAB") 'tab-to-tab-stop)
+      (define-key evil-visual-state-map (kbd ">") 'isa/evil-shift-right-visual)
+      (define-key evil-visual-state-map (kbd "<") 'isa/evil-shift-left-visual)
+      (define-key evil-visual-state-map [tab] 'isa/evil-shift-right-visual)
+      (define-key evil-visual-state-map [S-tab] 'isa/evil-shift-left-visual)
+      (evil-mode))
+
+  ;; multi-edit support for evil
+  (use-package evil-multiedit :ensure t
+    :config (evil-multiedit-default-keybinds))
 
   ;; Let's install counsel and its friends
   (use-package counsel :ensure t
@@ -123,9 +152,9 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
     :diminish (ivy-mode)
     :bind (("C-x b" . ivy-switch-buffer))
     :config
-    (ivy-mode 1)
-    (setq ivy-use-virtual-buffers t)
-    (setq ivy-display-style 'fancy))
+      (ivy-mode 1)
+      (setq ivy-use-virtual-buffers t)
+      (setq ivy-display-style 'fancy))
 
   (use-package swiper :ensure try
     :bind (("C-s" . swiper)
@@ -154,7 +183,6 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
   ;; snippets are awesome
   (use-package yasnippet :ensure t
     :config
-      (set-face-attribute 'yas-field-highlight-face nil :background "#fdcb6e")
       (yas-global-mode))
   (use-package yasnippet-snippets :ensure t)
 
@@ -166,6 +194,24 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
   ;; MAGIT or not, that's the matter
   (use-package magit :ensure t
     :config (global-set-key (kbd "C-c m") 'magit-status))
+
+  ;; small, but effective tool at times
+  (use-package visual-regexp :ensure t)
+
+  ;; a proper rest client
+  (use-package restclient :ensure t)
+
+  ;; graphviz support
+  (use-package graphviz-dot-mode :ensure t)
+
+  ;; auto-completion support
+  (use-package auto-complete :ensure t
+    :config
+      (ac-config-default)
+      (global-auto-complete-mode)
+      (setq ac-auto-start nil) ;; do not start auto-complete unless I press
+      (global-set-key "\M-/" 'auto-complete)
+      (setq-default ac-sources '(ac-source-words-in-all-buffer)))
 #+END_SRC
 
 * UI Customizations
@@ -181,7 +227,7 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
 
   ;; different themes for different UIs
   (if (display-graphic-p)
-    (add-hook 'after-init-hook 'make-pretty-gui)
+    (add-hook 'after-init-hook 'isa/make-pretty-gui)
     (add-hook 'after-init-hook
       (lambda () (load-theme 'danneskjold t))))
 
@@ -205,6 +251,16 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
     ;; a proper window size on launch
     (set-frame-position (selected-frame) 1050 70)
     (set-frame-size (selected-frame) 81 47))
+
+    ;; yasnippet colors
+    (set-face-attribute 'yas-field-highlight-face nil :background "#fdcb6e")
+
+    ;; auto-complete colors
+    (set-face-background 'ac-candidate-face "#ecf0f1")
+    (set-face-background 'ac-selection-face "#a29bfe")
+    (set-face-foreground 'ac-completion-face "#3498db")
+    (set-face-background 'popup-tip-face "#ffeaa7")
+    (set-face-underline 'ac-completion-face "#e74c3c")
 #+END_SRC
 * Mode Line Customizations
 #+BEGIN_SRC emacs-lisp
