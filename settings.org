@@ -20,6 +20,7 @@ This file contains my Emacs configuration. I try to cluster all the settings wit
 ** DONE Evil multi edit
 ** DONE Autocompletion setup
 ** DONE Python setup
+** TODO Hydra for the win
 ** TODO Better mod-line
 
 * Custom Functions
@@ -29,7 +30,23 @@ This file contains my Emacs configuration. I try to cluster all the settings wit
       "Customize themes, cursors for my own goodness"
       (load-theme 'base16-mexico-light t)
       (set-cursor-color "#EA2027")
-      (blink-cursor-mode 0))
+      (blink-cursor-mode 0)
+      (tool-bar-mode 0)
+      (scroll-bar-mode 0)
+
+      ;; customize font
+      (add-to-list 'default-frame-alist '(font . "Fira Code-14" ))
+      (set-face-attribute 'default t :font "Fira Code-14")
+      (setq default-frame-alist '((font . "Fira Code-14")))
+      (custom-set-faces
+        '(default ((t (:background nil :foreground nil))))
+        '(fringe ((t (:background nil)))))
+
+      ;; proper line numbers and line heights
+      (setq linum-format "%3d ")
+      (setq line-spacing 6)
+      (setq-default line-spacing 6))
+
 
     (defun isa/evil-shift-left-visual ()
       (interactive)
@@ -49,6 +66,7 @@ This file contains my Emacs configuration. I try to cluster all the settings wit
         (if (member project (pyenv-mode-versions))
             (pyenv-mode-set project)
           (pyenv-mode-unset))))
+
     (defun isa/projectile-pyenv-mode-set ()
       "Set pyenv version matching project name."
       (let ((project (projectile-project-name)))
@@ -166,6 +184,9 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
   (use-package which-key :ensure t
     :config (which-key-mode t))
 
+  ;; KeyChord for mapping consecutive key presses
+  (use-package key-chord :ensure t)
+
   ;; I don't think I can survive w/o vim bindings
   (use-package evil :ensure t
     :config
@@ -174,6 +195,9 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
       (define-key evil-visual-state-map (kbd "<") 'isa/evil-shift-left-visual)
       (define-key evil-visual-state-map [tab] 'isa/evil-shift-right-visual)
       (define-key evil-visual-state-map [S-tab] 'isa/evil-shift-left-visual)
+      (setq key-chord-two-keys-delay 0.2)
+      (key-chord-define evil-insert-state-map "jj" 'evil-normal-state)
+      (key-chord-mode 1)
       (evil-mode))
 
   (add-hook 'after-change-major-mode-hook
@@ -216,7 +240,7 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
   ;; you run 'all-the-icons-install-fonts' once before using
   (use-package all-the-icons :ensure t)
   (use-package neotree :ensure t
-    :config (setq neo-theme (if (display-graphic-p) 'icons 'arrow)))
+    :config (setq neo-theme (when (window-system) 'icons 'arrow)))
 
   ;; let's start some python magic
   (use-package pyenv-mode :ensure t
@@ -227,8 +251,12 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
 
   (use-package pyenv-mode-auto :ensure t)
 
+  ;; make sure to run M-x jedi:install-server before using it
   (use-package jedi :ensure t
-    :config (jedi:ac-setup))
+    :config
+      (add-hook 'python-mode-hook 'jedi:setup)
+      (jedi:ac-setup)
+      (setq jedi:complete-on-dot t))
 
   (use-package flycheck-pyflakes :ensure t
     :config (add-hook 'python-mode-hook 'flycheck-mode))
@@ -297,31 +325,19 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
   (use-package danneskjold-theme :ensure t)
 
   ;; different themes for different UIs
-  (if (display-graphic-p)
-    (add-hook 'after-init-hook 'isa/make-pretty-gui)
+  (when (window-system)
+    (add-hook 'after-init-hook 'isa/make-pretty-gui))
+
+  (when (not (window-system))
     (add-hook 'after-init-hook
       (lambda () (load-theme 'danneskjold t))))
 
   ;; please no toolbar and menubar
   (menu-bar-mode 0)
   (when (window-system)
-    (tool-bar-mode 0)
-    (scroll-bar-mode 0)
-
-    ;; customize font
-    (add-to-list 'default-frame-alist '(font . "Fira Code-16" ))
-    (set-face-attribute 'default t :font "Fira Code-16")
-    (custom-set-faces
-      '(default ((t (:background nil :foreground nil))))
-      '(fringe ((t (:background nil)))))
-    (setq-default line-spacing 6)
-
-    ;; proper line numbers
-    (setq linum-format "%3d ")
-
     ;; a proper window size on launch
-    (set-frame-position (selected-frame) 1050 70)
-    (set-frame-size (selected-frame) 81 47))
+    (set-frame-position (selected-frame) 850 50)
+    (set-frame-size (selected-frame) 100 53))
 
     ;; yasnippet colors
     (set-face-attribute 'yas-field-highlight-face nil :background "#fdcb6e")
@@ -346,7 +362,13 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
       (package-refresh-contents)
       (package-install (cadr (assq 'org package-archive-contents)))))
 
-  (use-package org :ensure org-plus-contrib :pin org)
+  (use-package org :ensure org-plus-contrib :pin org
+    :after key-chord
+    :config
+    (setq org-todo-keywords
+      '((sequence "TODO" "NEXT" "INPROGRESS" "BLOCKED" "SOMEDAY" "|" "DONE" "CANCELLED")))
+;;    (add-hook 'org-mode-hook '(key-chord-define org-mode-map "<space>-a" '(org-agenda)))
+)
 
   ;; fancy looking bullets for org-mode
   (use-package org-bullets :ensure t

@@ -19,7 +19,7 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (flycheck-pyflakes jedi pyenv-mode-auto elixir-mode erlang-mode nlinum evil-multiedit auto-complete graphviz-dot-mode restclient visual-regexp magit exec-path-from-shell counsel-projectile projectile yasnippet-snippets yasnippet company company-mode writeroom-mode telephone-line neo-theme all-the-icons neotree org-bullets org-plus-contrib org danneskjold-theme base16-theme pyenv-mode try ivy evil which-key better-defaults use-package)))
+    (evil-org evil-org-mode key-chord flycheck-pyflakes jedi pyenv-mode-auto elixir-mode erlang-mode nlinum evil-multiedit auto-complete graphviz-dot-mode restclient visual-regexp magit exec-path-from-shell counsel-projectile projectile yasnippet-snippets yasnippet company company-mode writeroom-mode telephone-line neo-theme all-the-icons neotree org-bullets org-plus-contrib org danneskjold-theme base16-theme pyenv-mode try ivy evil which-key better-defaults use-package)))
  '(python-guess-indent nil)
  '(python-indent-guess-indent-offset nil)
  '(python-indent-offset 2))
