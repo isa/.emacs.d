@@ -35,9 +35,9 @@ This file contains my Emacs configuration. I try to cluster all the settings wit
       (scroll-bar-mode 0)
 
       ;; customize font
-      (add-to-list 'default-frame-alist '(font . "Fira Code-14" ))
-      (set-face-attribute 'default t :font "Fira Code-14")
-      (setq default-frame-alist '((font . "Fira Code-14")))
+      (add-to-list 'default-frame-alist '(font . "Monaco-14" ))
+      (set-face-attribute 'default t :font "Monaco-14")
+      (setq default-frame-alist '((font . "Monaco-14")))
       (custom-set-faces
         '(default ((t (:background nil :foreground nil))))
         '(fringe ((t (:background nil)))))
@@ -209,8 +209,8 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
     :config (evil-multiedit-default-keybinds))
 
   ;; evil commenter M-; for selections
-  (use-package evil-nerd-commenter
-    :bind ("M-;" . evilnc-comment-or-uncomment-lines))
+  (use-package evil-nerd-commenter :ensure t
+    :config (global-set-key (kbd "s-/") 'evilnc-comment-or-uncomment-lines))
 
   ;; Let's install counsel and its friends
   (use-package counsel :ensure t
@@ -276,8 +276,8 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
     :config (counsel-projectile-mode t))
 
   ;; MAGIT or not, that's the matter
-  (use-package magit :ensure t
-    :config (global-set-key (kbd "C-c m") 'magit-status))
+  ;;(use-package magit :ensure t
+  ;;  :config (global-set-key (kbd "C-c m") 'magit-status))
 
   ;; small, but effective tool at times
   (use-package visual-regexp :ensure t)
@@ -297,15 +297,29 @@ This section contains all the settings about file-encoding, tab/spaces, OS relat
       (global-set-key "\M-/" 'auto-complete)
       (setq-default ac-sources '(ac-source-words-in-all-buffer)))
 
+  ;; proper javascript support
+  (use-package js2-mode
+    :mode "\\.js$"
+    :config
+      (add-to-list 'interpreter-mode-alist '("/usr/local/bin/node" . js2-mode)))
+  (use-package xref-js2 :ensure t)
+  (use-package js2-refactor :ensure t
+    :config
+      (add-hook 'js2-mode-hook #'js2-refactor-mode)
+      (js2r-add-keybindings-with-prefix "C-c C-r")
+      (define-key js2-mode-map (kbd "C-k") #'js2r-kill)
+      (define-key js-mode-map (kbd "M-.") nil)
+      (add-hook 'js2-mode-hook (lambda ()
+        (add-hook 'xref-backend-functions #'xref-js2-xref-backend nil t))))
+  (use-package skewer-mode :ensure t
+    :config (skewer-setup))
+
   ;; some additional major modes
   (use-package dockerfile-mode :ensure t)
   (use-package fish-mode :ensure t)
   (use-package fsharp-mode :ensure t)
   (use-package elixir-mode :ensure t)
   (use-package lua-mode :ensure t)
-  (use-package js2-mode
-    :mode "\\.js$"
-    :config (add-to-list 'interpreter-mode-alist '("node" . js2-mode)))
   (use-package nlinum :ensure t
     :config (unless window-system
               (setq nlinum-format "%3d ")))

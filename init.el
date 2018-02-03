@@ -1,6 +1,10 @@
 ;; emacs common package repositories
 (require 'package)
 (setq package-enable-at-startup nil)
+(setq gc-cons-threshold 64000000)
+(add-hook 'after-init-hook #'(lambda ()
+                               ;; restore after startup
+                               (setq gc-cons-threshold 800000)))
 
 (add-to-list 'package-archives
              '("melpa" . "http://melpa.milkbox.net/packages/") t)
@@ -19,7 +23,7 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (evil-org evil-org-mode key-chord flycheck-pyflakes jedi pyenv-mode-auto elixir-mode erlang-mode nlinum evil-multiedit auto-complete graphviz-dot-mode restclient visual-regexp magit exec-path-from-shell counsel-projectile projectile yasnippet-snippets yasnippet company company-mode writeroom-mode telephone-line neo-theme all-the-icons neotree org-bullets org-plus-contrib org danneskjold-theme base16-theme pyenv-mode try ivy evil which-key better-defaults use-package)))
+    (esup evil-nerd-commenter skewer-mode js2-refactor xref-js2 evil-org evil-org-mode key-chord flycheck-pyflakes jedi pyenv-mode-auto elixir-mode erlang-mode nlinum evil-multiedit auto-complete graphviz-dot-mode restclient visual-regexp magit exec-path-from-shell counsel-projectile projectile yasnippet-snippets yasnippet company company-mode writeroom-mode telephone-line neo-theme all-the-icons neotree org-bullets org-plus-contrib org danneskjold-theme base16-theme pyenv-mode try ivy evil which-key better-defaults use-package)))
  '(python-guess-indent nil)
  '(python-indent-guess-indent-offset nil)
  '(python-indent-offset 2))
